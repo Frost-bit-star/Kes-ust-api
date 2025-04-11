@@ -2,15 +2,14 @@ name: Keep API Alive
 
 on:
   schedule:
-    - cron: '*/2 * * * *'  # Every 2 minutes
-  workflow_dispatch:  # Allows you to manually trigger the action too
+    - cron: '*/2 * * * *'  # This cron expression schedules the workflow to run every 2 minutes
 
 jobs:
   ping:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Specifies the environment for the job
 
     steps:
       - name: Ping the API
         run: |
-          curl -X GET "https://kestoustd.onrender.com/convert?amount=1000"
-          echo "API Pinged at $(date)"
+          curl -X GET "https://kestoustd.onrender.com/convert?amount=1000"  # Sends a GET request to the API
+          echo "API Pinged at $(date)"  # Outputs the current date and time of the ping
