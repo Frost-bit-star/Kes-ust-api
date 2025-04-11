@@ -1,35 +1,41 @@
-from flask import Flask, jsonify, request
-import requests
+const express = require('express');
+const axios = require('axios');
 
-app = Flask(__name__)
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-def get_exchange_rate():
-    """Fetch the exchange rate for Tether (USDT) to Kenyan Shilling (KES) from CoinGecko."""
-    url = 'https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=kes'
-    response = requests.get(url)
-    data = response.json()
-    return data.get('tether', {}).get('kes')
+// Middleware to parse JSON requests
+app.use(express.json());
 
-@app.route('/convert', methods=['GET'])
-def convert_kes_to_usdt():
-    """Convert KES to USDT using the current exchange rate."""
-    exchange_rate = get_exchange_rate()
+// Function to fetch the KES to USDT conversion rate
+const fetchConversionRate = async () => {
+    try {
+        const response = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=kes');
+        return response.data.tether.kes;
+    } catch (error) {
+        console.error('Error fetching conversion rate:', error);
+        throw new Error('Could not fetch conversion rate');
+    }
+};
 
-    if exchange_rate is None:
-        return jsonify({"error": "Unable to retrieve exchange rate."}), 500
+// API endpoint to convert KES to USDT
+app.get('/convert', async (req, res) => {
+    const { amount } = req.query;
 
-    amount_kes = request.args.get('kes', type=float)
+    if (!amount || isNaN(amount)) {
+        return res.status(400).json({ error: 'Invalid amount provided' });
+    }
 
-    if amount_kes is None:
-        return jsonify({"error": "No KES amount provided."}), 400
+    try {
+        const conversionRate = await fetchConversionRate();
+        const usdtAmount = (amount / conversionRate).toFixed(6); // Convert KES to USDT
+        res.json({ usdtAmount });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
-    amount_usdt = amount_kes / exchange_rate
-
-    return jsonify({
-        "kes": amount_kes,
-        "usdt": round(amount_usdt, 2),
-        "exchange_rate": round(exchange_rate, 4)
-    })
-
-if __name__ == '__main__':
-    app.run(debug=True)
+// Start the server
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+});
